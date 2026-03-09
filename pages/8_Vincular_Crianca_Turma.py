@@ -42,18 +42,31 @@ with st.form("form_vinculo"):
         class_id = turmas_dict[turma_selecionada]
 
         cursor.execute("""
-        INSERT INTO child_class (child_id, class_id)
-        VALUES (?, ?)
+        SELECT id
+        FROM child_class
+        WHERE child_id = ? AND class_id = ?
         """, (child_id, class_id))
 
-        conn.commit()
-        st.success("Criança vinculada à turma com sucesso.")
+        vinculo_existente = cursor.fetchone()
+
+        if vinculo_existente:
+            st.warning("Esta criança já está vinculada a essa turma.")
+        else:
+            cursor.execute("""
+            INSERT INTO child_class (child_id, class_id)
+            VALUES (?, ?)
+            """, (child_id, class_id))
+
+            conn.commit()
+            st.success("Criança vinculada à turma com sucesso.")
+            st.rerun()
 
 st.divider()
 st.subheader("Vínculos cadastrados")
 
 cursor.execute("""
 SELECT
+    child_class.id,
     children.full_name,
     classes.name,
     schools.name
@@ -65,10 +78,26 @@ ORDER BY children.full_name
 """)
 
 vinculos = cursor.fetchall()
-conn.close()
 
 if vinculos:
     for v in vinculos:
-        st.write(f"Criança: {v[0]} | Turma: {v[1]} | Escola: {v[2]}")
+        vinculo_id = v[0]
+        nome_crianca = v[1]
+        nome_turma = v[2]
+        nome_escola = v[3]
+
+        col1, col2 = st.columns([5, 1])
+
+        with col1:
+            st.write(f"Criança: {nome_crianca} | Turma: {nome_turma} | Escola: {nome_escola}")
+
+        with col2:
+            if st.button("Excluir", key=f"excluir_{vinculo_id}"):
+                cursor.execute("DELETE FROM child_class WHERE id = ?", (vinculo_id,))
+                conn.commit()
+                st.success("Vínculo excluído com sucesso.")
+                st.rerun()
 else:
     st.info("Nenhum vínculo cadastrado ainda.")
+
+conn.close()

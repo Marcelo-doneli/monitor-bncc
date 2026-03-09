@@ -58,6 +58,15 @@ def create_tables():
         FOREIGN KEY (class_id) REFERENCES classes (id)
     )
     """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS pedagogical_strategies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        objective_id INTEGER NOT NULL,
+        strategy TEXT NOT NULL,
+        notes TEXT,
+        FOREIGN KEY (objective_id) REFERENCES bncc_objectives (id)
+    )
+    """)
     conn.commit()
     conn.close()
     print("Tabelas criadas com sucesso.")
