@@ -120,6 +120,7 @@ cursor.execute("""
 SELECT
     assessments.id,
     children.full_name,
+    bncc_objectives.id,
     bncc_objectives.code,
     bncc_objectives.description,
     assessments.assessment_date,
@@ -137,14 +138,41 @@ conn.close()
 
 if avaliacoes:
     for av in avaliacoes:
-        data_formatada = datetime.strptime(av[4], "%Y-%m-%d").strftime("%d/%m/%Y")
+        objective_id = av[2]
+        codigo_objetivo = av[3]
+        descricao_objetivo = av[4]
+        data_formatada = datetime.strptime(av[5], "%Y-%m-%d").strftime("%d/%m/%Y")
+        nivel = av[6]
+        observacoes = av[7] if av[7] else "---"
+        defasagem = av[8] if av[8] else "Não"
 
         st.markdown(f"**{av[1]}**")
-        st.write(f"Objetivo: {av[2]} - {av[3]}")
+        st.write(f"Objetivo: {codigo_objetivo} - {descricao_objetivo}")
         st.write(f"Data: {data_formatada}")
-        st.write(f"Nível: {av[5]}")
-        st.write(f"Defasagem identificada: {av[7] if av[7] else 'Não'}")
-        st.write(f"Observações: {av[6] if av[6] else '---'}")
+        st.write(f"Nível: {nivel}")
+        st.write(f"Defasagem identificada: {defasagem}")
+        st.write(f"Observações: {observacoes}")
+
+        if defasagem == "Sim":
+            cursor.execute("""
+            SELECT strategy, notes
+            FROM pedagogical_strategies
+            WHERE objective_id = ?
+            """, (objective_id,))
+            estrategias = cursor.fetchall()
+
+            if estrategias:
+                st.write("**Estratégias pedagógicas sugeridas:**")
+                for estrategia in estrategias:
+                    texto_estrategia = estrategia[0]
+                    obs_estrategia = estrategia[1] if estrategia[1] else "---"
+
+                    st.write(f"- {texto_estrategia}")
+                    if obs_estrategia != "---":
+                        st.write(f"  Observação: {obs_estrategia}")
+            else:
+                st.info("Não há estratégias pedagógicas cadastradas para este objetivo.")
+
         st.divider()
 else:
     st.info("Nenhuma avaliação registrada ainda.")
