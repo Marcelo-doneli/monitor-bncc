@@ -67,6 +67,20 @@ def create_tables():
         FOREIGN KEY (objective_id) REFERENCES bncc_objectives (id)
     )
     """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS deficiency_markers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        child_id INTEGER NOT NULL,
+        objective_id INTEGER NOT NULL,
+        status TEXT NOT NULL,
+        opened_date TEXT NOT NULL,
+        closed_date TEXT,
+        last_assessment_id INTEGER,
+        FOREIGN KEY (child_id) REFERENCES children (id),
+        FOREIGN KEY (objective_id) REFERENCES bncc_objectives (id),
+        FOREIGN KEY (last_assessment_id) REFERENCES assessments (id)
+    )
+    """)
     conn.commit()
     conn.close()
     print("Tabelas criadas com sucesso.")

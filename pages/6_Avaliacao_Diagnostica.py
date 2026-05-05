@@ -1,6 +1,7 @@
 import streamlit as st
 from src.db import get_connection
 from datetime import datetime
+from src.marker_engine import update_deficiency_marker
 
 st.set_page_config(page_title="Avaliação Diagnóstica", layout="wide")
 
@@ -123,6 +124,17 @@ with st.form("form_avaliacao"):
             observacoes.strip(),
             defasagem
         ))
+
+        assessment_id = cursor.lastrowid
+
+        update_deficiency_marker(
+            conn=conn,
+            child_id=child_id,
+            objective_id=objective_id,
+            assessment_id=assessment_id,
+            assessment_date=data_avaliacao,
+            learning_level=nivel_aprendizagem
+        )
 
         conn.commit()
         st.success("Avaliação registrada com sucesso.")
