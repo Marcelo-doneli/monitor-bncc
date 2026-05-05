@@ -6,6 +6,20 @@ st.set_page_config(page_title="Avaliação Diagnóstica", layout="wide")
 
 st.title("Avaliação Diagnóstica")
 
+
+def formatar_data(data_texto):
+    if not data_texto:
+        return ""
+
+    for formato in ("%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d"):
+        try:
+            return datetime.strptime(data_texto, formato).strftime("%d/%m/%Y")
+        except ValueError:
+            pass
+
+    return data_texto
+
+
 conn = get_connection()
 cursor = conn.cursor()
 
@@ -112,6 +126,7 @@ with st.form("form_avaliacao"):
 
         conn.commit()
         st.success("Avaliação registrada com sucesso.")
+        st.rerun()
 
 st.divider()
 st.subheader("Avaliações registradas")
@@ -134,14 +149,13 @@ ORDER BY assessments.assessment_date DESC, children.full_name
 """)
 
 avaliacoes = cursor.fetchall()
-conn.close()
 
 if avaliacoes:
     for av in avaliacoes:
         objective_id = av[2]
         codigo_objetivo = av[3]
         descricao_objetivo = av[4]
-        data_formatada = datetime.strptime(av[5], "%Y-%m-%d").strftime("%d/%m/%Y")
+        data_formatada = formatar_data(av[5])
         nivel = av[6]
         observacoes = av[7] if av[7] else "---"
         defasagem = av[8] if av[8] else "Não"
@@ -159,15 +173,18 @@ if avaliacoes:
             FROM pedagogical_strategies
             WHERE objective_id = ?
             """, (objective_id,))
+
             estrategias = cursor.fetchall()
 
             if estrategias:
                 st.write("**Estratégias pedagógicas sugeridas:**")
+
                 for estrategia in estrategias:
                     texto_estrategia = estrategia[0]
                     obs_estrategia = estrategia[1] if estrategia[1] else "---"
 
                     st.write(f"- {texto_estrategia}")
+
                     if obs_estrategia != "---":
                         st.write(f"  Observação: {obs_estrategia}")
             else:
@@ -176,3 +193,5 @@ if avaliacoes:
         st.divider()
 else:
     st.info("Nenhuma avaliação registrada ainda.")
+
+conn.close()
